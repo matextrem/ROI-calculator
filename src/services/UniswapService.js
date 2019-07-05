@@ -44,10 +44,10 @@ const UniswapService = {
         const curSymbol = token || "RLC";
         tokenDecimals = Math.pow(10, UNISWAP_CONTRACT.tokens[curSymbol].decimals);
         exchangeAddress = UNISWAP_CONTRACT.tokens[curSymbol].address;
-        const response = await UniswapService.getLogs2(UNISWAP_CONTRACT.originBlock, UNISWAP_CONTRACT.originBlock + biteSize, address);
+        const response = await UniswapService.getLogs(UNISWAP_CONTRACT.originBlock, UNISWAP_CONTRACT.originBlock + biteSize, address);
         return response;
     },
-    getLogs2: async (fromBlock, toBlock, myAddress) => {
+    getLogs: async (fromBlock, toBlock, myAddress) => {
         await provider.getLogs({
             fromBlock: fromBlock,
             toBlock: toBlock,
@@ -153,12 +153,12 @@ const UniswapService = {
             while (true) {
                 let currentBlock = await provider.getBlockNumber();
                 if (currentBlock > toBlock) {
-                    await UniswapService.getLogs2(toBlock + 1, currentBlock, myAddress);
+                    await UniswapService.getLogs(toBlock + 1, currentBlock, myAddress);
                 }
                 break;
             }
         } else {
-            await UniswapService.getLogs2(toBlock + 1, toBlock + biteSize, myAddress);
+            await UniswapService.getLogs(toBlock + 1, toBlock + biteSize, myAddress);
         }
 
         return data;
