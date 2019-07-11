@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useDebounce } from 'use-debounce';
 import uniswapService from './services/UniswapService';
-import { Navbar, Spinner, Row, Container, InputGroup, FormControl, Button, Col, Dropdown, Card } from 'react-bootstrap';
+import { Navbar, Spinner, Row, Container, InputGroup, FormControl, Button, Col, Dropdown, Card, Table } from 'react-bootstrap';
 import logo from './logo.svg';
 import './App.scss';
 import UniswapService from './services/UniswapService';
@@ -51,6 +51,7 @@ const App = () => {
                   aria-label="Account address"
                   aria-describedby="basic-addon2"
                 />
+
                 <InputGroup.Append>
                   <Button disabled={!address || !token} onClick={getROI} variant="outline-secondary">Search</Button>
                 </InputGroup.Append>
@@ -74,22 +75,52 @@ const App = () => {
                 </Spinner>
               </div> :
               <>
-                <div className="roi-box">
-                  <Card>
-                    <Card.Header as="h5">Value of your Investment Today: </Card.Header>
-                    <Card.Body>
-                      <Card.Title>{roiData.investmentToday || "-"} {roiData.investmentToday && "USD"}</Card.Title>
-                    </Card.Body>
-                  </Card>
-                </div>
-                <div className="roi-box">
-                  <Card>
-                    <Card.Header as="h5">Value if you HODL'd: </Card.Header>
-                    <Card.Body>
-                      <Card.Title>{roiData.valueHold || "-"} {roiData.valueHold && "USD"}</Card.Title>
-                    </Card.Body>
-                  </Card>
-                </div>
+                <Row lg={12} md={12} sm={12} xs={12}>
+                  <div className="roi-box">
+                    <Card>
+                      <Card.Header as="h5">Value of your Investment Today: </Card.Header>
+                      <Card.Body>
+                        <Card.Title>{roiData.investmentToday || "-"} {roiData.investmentToday && "USD"}</Card.Title>
+                      </Card.Body>
+                    </Card>
+                  </div>
+                  <div className="roi-box">
+                    <Card>
+                      <Card.Header as="h5">Value if you HODL'd: </Card.Header>
+                      <Card.Body>
+                        <Card.Title>{roiData.valueHold || "-"} {roiData.valueHold && "USD"}</Card.Title>
+                      </Card.Body>
+                    </Card>
+                  </div>
+                </Row>
+                {!loading && Object.keys(roiData).length !== 0 &&
+                  <Row lg={12} md={12} sm={12} xs={12}>
+                    <Table striped bordered hover>
+                      <thead>
+                        <tr>
+
+                          <th>Your ETH</th>
+                          <th>Your {token}</th>
+                          <th>Value today</th>
+                          <th>Value when invested</th>
+                          <th>Net ROI</th>
+                          <th>Price ROI</th>
+                          <th>Uniswap ROI</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td>{roiData.yourEth}</td>
+                          <td>{roiData.yourToken}</td>
+                          <td>${roiData.investmentToday}</td>
+                          <td>-</td>
+                          <td>-</td>
+                          <td>-</td>
+                          <td>-</td>
+                        </tr>
+                      </tbody>
+                    </Table>
+                  </Row>}
               </>}
           </Row>
         </div>

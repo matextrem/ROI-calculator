@@ -55,8 +55,8 @@ const UniswapService = {
     },
     getLogs: async (fromBlock, toBlock, myAddress) => {
         await provider.getLogs({
-            fromBlock: fromBlock,
-            toBlock: toBlock,
+            fromBlock,
+            toBlock,
             address: exchangeAddress
         }).then((result) => {
             result.forEach((r) => {
@@ -178,7 +178,7 @@ const UniswapService = {
             yourEth: yourEth.toFixed(2),
             yourToken: ((data.liquidity.tokens * data.deposited.poolShare) / 100).toFixed(2),
             investmentToday: investmentToday.toFixed(2),
-            valueHold: valueHold.toFixed(2)
+            valueHold: valueHold.toFixed(2),
         }
     },
     updateDeposit: (result, address, eth, tokens, deposited) => {
