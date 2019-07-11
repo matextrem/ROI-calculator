@@ -1,6 +1,8 @@
 import UNISWAP_CONTRACT from '../contracts/Uniswap';
 import BigNumber from "bignumber.js/bignumber.mjs";
 import { ethers } from 'ethers';
+import axios from 'axios';
+
 
 let providerCurrent = new ethers.providers.JsonRpcProvider('https://mainnet.infura.io/v3/c3ae26636c8646b0a76798e6a23b19cf'); //provider for current blocks, has to keep at least biteSize blocks/
 let providerArchive = new ethers.providers.JsonRpcProvider('https://mainnet.infura.io/v3/c3ae26636c8646b0a76798e6a23b19cf'); //provider for "old" blocks
@@ -46,6 +48,10 @@ const UniswapService = {
         exchangeAddress = UNISWAP_CONTRACT.tokens[curSymbol].address;
         const response = await UniswapService.getLogs(UNISWAP_CONTRACT.originBlock, UNISWAP_CONTRACT.originBlock + biteSize, address);
         return response;
+    },
+    tokenPrice: async token => {
+        const response = await axios.get(`https://api.coinmarketcap.com/v1/ticker/${token}/?convert=USD`);
+        return response.data[0].price_usd;
     },
     getLogs: async (fromBlock, toBlock, myAddress) => {
         await provider.getLogs({
@@ -162,6 +168,18 @@ const UniswapService = {
         }
 
         return data;
+    },
+    getDisplayData: async data => {
+        const ethPrice = await UniswapService.tokenPrice('ethereum');
+        const yourEth = (data.liquidity.eth * data.deposited.poolShare) / 100;
+        const investmentToday = (yourEth * ethPrice) + (data.deposited.eth * ethPrice);
+        const valueHold = investmentToday - (data.currentProfit * ethPrice);
+        return {
+            yourEth: yourEth.toFixed(2),
+            yourToken: ((data.liquidity.tokens * data.deposited.poolShare) / 100).toFixed(2),
+            investmentToday: investmentToday.toFixed(2),
+            valueHold: valueHold.toFixed(2)
+        }
     },
     updateDeposit: (result, address, eth, tokens, deposited) => {
         if (result.values.provider.toUpperCase() === address.toUpperCase()) {

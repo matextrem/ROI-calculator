@@ -1,22 +1,31 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
+import { useDebounce } from 'use-debounce';
 import uniswapService from './services/UniswapService';
-import { Navbar, Spinner, Row, Container, InputGroup, FormControl, Button, Col, Dropdown } from 'react-bootstrap';
+import { Navbar, Spinner, Row, Container, InputGroup, FormControl, Button, Col, Dropdown, Card } from 'react-bootstrap';
 import logo from './logo.svg';
-import './App.css';
+import './App.scss';
 import UniswapService from './services/UniswapService';
 
 const App = () => {
 
-  const [roiData, setRoiData] = useState({});
   const [loading, setLoading] = useState(false);
+  const [roiData, setRoiData] = useState({});
+  const [token, setToken] = useState(null);
+  const [address, setAddress] = useState(null);
+  const [debounceAddress] = useDebounce(address, 1000);
 
-  useEffect(() => {
+
+  const getROI = () => {
     async function fetchData() {
-      const data = await uniswapService.get('0x75bbc7d37d3bf975b527cf2e99b947d61a22ef95', 'WBTC');
-      console.log('data', data);
+      setLoading(true);
+      const data = await uniswapService.get(debounceAddress, token);
+      const displayData = await uniswapService.getDisplayData(data);
+      setRoiData(displayData);
+      setLoading(false);
     }
     fetchData();
-  });
+  };
+  ;
   return (
     <div className="App">
       <Navbar bg="dark" variant="dark">
@@ -37,29 +46,51 @@ const App = () => {
             <Col lg={9} md={9} sm={9} xs={9}>
               <InputGroup className="mb-3">
                 <FormControl
+                  onChange={e => setAddress(e.target.value)}
                   placeholder="Account address"
                   aria-label="Account address"
                   aria-describedby="basic-addon2"
                 />
                 <InputGroup.Append>
-                  <Button variant="outline-secondary">Search</Button>
+                  <Button disabled={!address || !token} onClick={getROI} variant="outline-secondary">Search</Button>
                 </InputGroup.Append>
               </InputGroup>
             </Col>
             <Col lg={3} md={3} sm={3} xs={3}>
               <Dropdown>
                 <Dropdown.Toggle variant="success" id="dropdown-basic">
-                  Tokens
+                  {token || 'Tokens'}
                 </Dropdown.Toggle>
                 <Dropdown.Menu className="token-selector">
-                  {UniswapService.tokens().map((token, key) => <Dropdown.Item key={`token-${key}`}>{token}</Dropdown.Item>)}
+                  {UniswapService.tokens().map((token, key) => <Dropdown.Item onClick={() => setToken(token)} key={`token-${key}`}>{token}</Dropdown.Item>)}
                 </Dropdown.Menu>
               </Dropdown>
             </Col>
-
-            <Spinner animation="grow" role="status" size="lg">
-              <span className="sr-only">Loading...</span>
-            </Spinner>
+            {loading ?
+              <div className="spinner">
+                <h5>Analyzing all the transactions... (this might take a few minutes)</h5>
+                <Spinner animation="grow" role="status" size="lg">
+                  <span className="sr-only">Loading...</span>
+                </Spinner>
+              </div> :
+              <>
+                <div className="roi-box">
+                  <Card>
+                    <Card.Header as="h5">Value of your Investment Today: </Card.Header>
+                    <Card.Body>
+                      <Card.Title>{roiData.investmentToday || "-"} {roiData.investmentToday && "USD"}</Card.Title>
+                    </Card.Body>
+                  </Card>
+                </div>
+                <div className="roi-box">
+                  <Card>
+                    <Card.Header as="h5">Value if you HODL'd: </Card.Header>
+                    <Card.Body>
+                      <Card.Title>{roiData.valueHold || "-"} {roiData.valueHold && "USD"}</Card.Title>
+                    </Card.Body>
+                  </Card>
+                </div>
+              </>}
           </Row>
         </div>
 

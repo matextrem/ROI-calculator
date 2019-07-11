@@ -1,9 +1,0 @@
-.main-container {
-  padding: 50px;
-}
-
-.token-selector {
-  max-height: 300px;
-  overflow: hidden;
-  overflow-y: scroll;
-}

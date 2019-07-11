@@ -1,0 +1,23 @@
+.main-container {
+  padding: 50px;
+}
+
+.token-selector {
+  max-height: 300px;
+  overflow: hidden;
+  overflow-y: scroll;
+}
+
+.spinner {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  padding: 20px;
+  div {
+    margin: 0 auto;
+  }
+}
+
+.roi-box {
+  padding: 15px;
+}
