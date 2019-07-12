@@ -3,49 +3,49 @@ import BigNumber from "bignumber.js/bignumber.mjs";
 import { ethers } from 'ethers';
 import axios from 'axios';
 
-
-let providerCurrent = new ethers.providers.JsonRpcProvider('https://mainnet.infura.io/v3/c3ae26636c8646b0a76798e6a23b19cf'); //provider for current blocks, has to keep at least biteSize blocks/
-let providerArchive = new ethers.providers.JsonRpcProvider('https://mainnet.infura.io/v3/c3ae26636c8646b0a76798e6a23b19cf'); //provider for "old" blocks
-let iface = new ethers.utils.Interface(UNISWAP_CONTRACT.abi);
-let numMyShareTokens = new BigNumber(0);
-let numMintedShareTokens = new BigNumber(0);
-let totalEthFees = 0.0;
-let totalTokenFees = 0.0;
-let tokenDecimals = 0;
-let exchangeAddress = null;
-let curPoolShare = 0;
-let curPoolShareDisplay = 0;
-let provider = providerArchive; // provider
-let curEthTotal = 0;
-let curTokenTotal = 0;
-
-const data = {
-    currentProfit: 0,
-    liquidity: {
-        eth: 0,
-        tokens: 0,
-        poolFees: 0,
-        poolRate: 0
-    },
-    deposited: {
-        hasDeposit: false,
-        poolShare: 0,
-        eth: 0.0,
-        tokens: 0.0
-    }
-};
 const biteSize = 25000; // how many blocks (or rather logs) should we request at once (for Infura should be much lower)
 const providerFeePercent = 0.003;
-
-
 const UniswapService = {
+    initialize: () => {
+        UniswapService.providerCurrent = new ethers.providers.JsonRpcProvider('https://mainnet.infura.io/v3/c3ae26636c8646b0a76798e6a23b19cf'); //provider for current blocks, has to keep at least biteSize blocks/
+        UniswapService.providerArchive = new ethers.providers.JsonRpcProvider('https://mainnet.infura.io/v3/c3ae26636c8646b0a76798e6a23b19cf'); //provider for "old" blocks
+        UniswapService.iface = new ethers.utils.Interface(UNISWAP_CONTRACT.abi);
+        UniswapService.numMyShareTokens = new BigNumber(0);
+        UniswapService.numMintedShareTokens = new BigNumber(0);
+        UniswapService.totalEthFees = 0.0;
+        UniswapService.totalTokenFees = 0.0;
+        UniswapService.tokenDecimals = 0;
+        UniswapService.exchangeAddress = null;
+        UniswapService.curPoolShare = 0;
+        UniswapService.curPoolShareDisplay = 0;
+        UniswapService.provider = UniswapService.providerArchive; // provider
+        UniswapService.curEthTotal = 0;
+        UniswapService.curTokenTotal = 0;
+        UniswapService.data = {
+            currentProfit: 0,
+            liquidity: {
+                eth: 0,
+                tokens: 0,
+                poolFees: 0,
+                poolRate: 0
+            },
+            deposited: {
+                total: 0,
+                hasDeposit: false,
+                poolShare: 0,
+                eth: 0.0,
+                tokens: 0.0
+            }
+        };
+    },
     tokens: () => {
         return Object.keys(UNISWAP_CONTRACT.tokens);
     },
     get: async (address, token) => {
+        UniswapService.initialize();
         const curSymbol = token || "RLC";
-        tokenDecimals = Math.pow(10, UNISWAP_CONTRACT.tokens[curSymbol].decimals);
-        exchangeAddress = UNISWAP_CONTRACT.tokens[curSymbol].address;
+        UniswapService.tokenDecimals = Math.pow(10, UNISWAP_CONTRACT.tokens[curSymbol].decimals);
+        UniswapService.exchangeAddress = UNISWAP_CONTRACT.tokens[curSymbol].address;
         const response = await UniswapService.getLogs(UNISWAP_CONTRACT.originBlock, UNISWAP_CONTRACT.originBlock + biteSize, address);
         return response;
     },
@@ -54,13 +54,14 @@ const UniswapService = {
         return response.data[0].price_usd;
     },
     getLogs: async (fromBlock, toBlock, myAddress) => {
-        await provider.getLogs({
+        let instance = UniswapService;
+        await instance.provider.getLogs({
             fromBlock,
             toBlock,
-            address: exchangeAddress
+            address: instance.exchangeAddress
         }).then((result) => {
             result.forEach((r) => {
-                let parsedResult = iface.parseLog(r);
+                let parsedResult = instance.iface.parseLog(r);
                 let eth = 0;
                 let tokens = 0;
                 let ethFee = 0;
@@ -69,13 +70,13 @@ const UniswapService = {
                 switch (parsedResult.name) {
                     case 'AddLiquidity':
                         eth = parsedResult.values.eth_amount / 1e18;
-                        tokens = parsedResult.values.token_amount / tokenDecimals;
-                        UniswapService.updateDeposit(parsedResult, myAddress, eth, tokens, true);
+                        tokens = parsedResult.values.token_amount / instance.tokenDecimals;
+                        UniswapService.updateDeposit({ ...parsedResult, txHash: r.transactionHash }, myAddress, eth, tokens, true);
                         break;
                     case 'RemoveLiquidity':
                         eth = -parsedResult.values.eth_amount / 1e18;
-                        tokens = -parsedResult.values.token_amount / tokenDecimals;
-                        UniswapService.updateDeposit(parsedResult, myAddress, eth, tokens, data.deposited.hasDeposit);
+                        tokens = -parsedResult.values.token_amount / instance.tokenDecimals;
+                        UniswapService.updateDeposit({ ...parsedResult, txHash: r.transactionHash }, myAddress, eth, tokens, instance.data.deposited.hasDeposit);
                         break;
                     case 'Transfer':
                         let sender = parsedResult.values._from;
@@ -84,24 +85,24 @@ const UniswapService = {
                         let numShareTokens = new BigNumber(parsedResult.values._value);
 
                         if (receiver === "0x0000000000000000000000000000000000000000") {
-                            numMintedShareTokens = numMintedShareTokens.minus(numShareTokens);
+                            instance.numMintedShareTokens = instance.numMintedShareTokens.minus(numShareTokens);
                             if (sender.toUpperCase() === myAddress.toUpperCase()) {
-                                numMyShareTokens = numMyShareTokens.minus(numShareTokens);
+                                instance.numMyShareTokens = instance.numMyShareTokens.minus(numShareTokens);
                             }
                         } else if (sender === "0x0000000000000000000000000000000000000000") {
-                            numMintedShareTokens = numMintedShareTokens.plus(numShareTokens);
+                            instance.numMintedShareTokens = instance.numMintedShareTokens.plus(numShareTokens);
                             if (receiver.toUpperCase() === myAddress.toUpperCase()) {
-                                numMyShareTokens = numMyShareTokens.plus(numShareTokens);
+                                instance.numMyShareTokens = instance.numMyShareTokens.plus(numShareTokens);
                             }
                         }
                         break;
                     case 'TokenPurchase':
-                        tokens = -parsedResult.values.tokens_bought / tokenDecimals;
+                        tokens = -parsedResult.values.tokens_bought / instance.tokenDecimals;
                         eth = parsedResult.values.eth_sold / 1e18;
                         tokenFee = (-tokens / (1 - providerFeePercent)) + tokens; // buying tokens, fee was deducted from tokens
                         break;
                     case 'EthPurchase':
-                        tokens = parsedResult.values.tokens_sold / tokenDecimals;
+                        tokens = parsedResult.values.tokens_sold / instance.tokenDecimals;
                         eth = -parsedResult.values.eth_bought / 1e18;
                         ethFee = (-eth / (1 - providerFeePercent)) + eth;
                         break;
@@ -111,41 +112,41 @@ const UniswapService = {
                 }
 
                 // update eth and tokens
-                curEthTotal += eth;
-                curTokenTotal += tokens;
+                instance.curEthTotal += eth;
+                instance.curTokenTotal += tokens;
 
                 // update current pool share. take users's share tokens and divide by total minted share tokens
-                curPoolShare = new BigNumber(
-                    numMyShareTokens.dividedBy(numMintedShareTokens)
+                instance.curPoolShare = new BigNumber(
+                    instance.numMyShareTokens.dividedBy(instance.numMintedShareTokens)
                 );
-                if (isNaN(curPoolShare) || curPoolShare.toFixed(4) === 0) {
-                    curPoolShare = 0;
-                    data.deposited.eth = 0;
-                    data.deposited.tokens = 0;
+                if (isNaN(instance.curPoolShare) || instance.curPoolShare.toFixed(4) === 0) {
+                    instance.curPoolShare = 0;
+                    instance.data.deposited.eth = 0;
+                    instance.data.deposited.tokens = 0;
                 }
 
                 // get a percentage from the pool share
-                curPoolShareDisplay = (curPoolShare * 100).toFixed(4);
+                instance.curPoolShareDisplay = (instance.curPoolShare * 100).toFixed(4);
 
-                totalEthFees += ethFee;
-                totalTokenFees += tokenFee;
+                instance.totalEthFees += ethFee;
+                instance.totalTokenFees += tokenFee;
 
                 let ratio = (
-                    curEthTotal / curTokenTotal
+                    instance.curEthTotal / instance.curTokenTotal
                 )
 
                 let delta = (
-                    (curPoolShare * curTokenTotal - data.deposited.tokens)
-                    * (curEthTotal / curTokenTotal)
-                    + (curPoolShare * curEthTotal - data.deposited.eth)
+                    (instance.curPoolShare * instance.curTokenTotal - instance.data.deposited.tokens)
+                    * (instance.curEthTotal / instance.curTokenTotal)
+                    + (instance.curPoolShare * instance.curEthTotal - instance.data.deposited.eth)
                 ).toPrecision(4);
 
-                data.liquidity.eth = curEthTotal.toPrecision(6);
-                data.liquidity.tokens = curTokenTotal.toPrecision(8);
-                data.liquidity.poolRate = ratio.toPrecision(4);
-                data.liquidity.poolFees = (totalEthFees + totalTokenFees * ratio).toPrecision(4);
-                data.currentProfit = delta;
-                data.deposited.poolShare = curPoolShareDisplay;
+                instance.data.liquidity.eth = instance.curEthTotal.toPrecision(6);
+                instance.data.liquidity.tokens = instance.curTokenTotal.toPrecision(8);
+                instance.data.liquidity.poolRate = ratio.toPrecision(4);
+                instance.data.liquidity.poolFees = (instance.totalEthFees + instance.totalTokenFees * ratio).toPrecision(4);
+                instance.data.currentProfit = delta;
+                instance.data.deposited.poolShare = instance.curPoolShareDisplay;
             })
 
         }).catch((err) => {
@@ -154,8 +155,8 @@ const UniswapService = {
 
 
         //switch to "current" mode
-        if (toBlock > await provider.getBlockNumber() - biteSize) {
-            let provider = providerCurrent;
+        if (toBlock > await instance.provider.getBlockNumber() - biteSize) {
+            let provider = instance.providerCurrent;
             while (true) {
                 let currentBlock = await provider.getBlockNumber();
                 if (currentBlock > toBlock) {
@@ -167,26 +168,43 @@ const UniswapService = {
             await UniswapService.getLogs(toBlock + 1, toBlock + biteSize, myAddress);
         }
 
-        return data;
+        return instance.data;
+    },
+    getTransactionPrice: async txHash => {
+        const response = await axios.get(`https://web3api.io/api/v1/transactions/${txHash}`, {
+            params: {
+                includePrice: true
+            },
+            headers: { 'X-Api-Key': 'UAKe2867a72bfb9fadd3e1407ee81fdb4a0' }
+        });
+
+        return Number(response.data.payload.price.value.total);
     },
     getDisplayData: async data => {
         const ethPrice = await UniswapService.tokenPrice('ethereum');
         const ethPriceFixed = Number(ethPrice).toFixed(2);
+        console.log(data.deposited.eth);
         const yourEth = ((data.liquidity.eth * data.deposited.poolShare) / 100).toFixed(2);
         const investmentToday = ((yourEth * ethPriceFixed) + (data.deposited.eth * ethPriceFixed)).toFixed(2);
         const valueHold = (investmentToday - (data.currentProfit * ethPriceFixed)).toFixed(2);
+        const totalDeposited = data.deposited.total.toFixed(2);
+        const netRoi = ((investmentToday - totalDeposited) / totalDeposited) * 100
         return {
             yourEth,
             yourToken: ((data.liquidity.tokens * data.deposited.poolShare) / 100).toFixed(2),
             investmentToday,
-            valueHold
+            valueHold,
+            netRoi: netRoi.toFixed(2),
+            totalDeposited,
         }
     },
-    updateDeposit: (result, address, eth, tokens, deposited) => {
+    updateDeposit: async (result, address, eth, tokens, deposited) => {
         if (result.values.provider.toUpperCase() === address.toUpperCase()) {
-            data.deposited.eth = data.deposited.eth + eth;
-            data.deposited.tokens = data.deposited.tokens + tokens;
-            data.deposited.hasDeposit = deposited;
+            UniswapService.data.deposited.eth = UniswapService.data.deposited.eth + eth;
+            UniswapService.data.deposited.tokens = UniswapService.data.deposited.tokens + tokens;
+            const txValue = await UniswapService.getTransactionPrice(result.txHash);
+            UniswapService.data.deposited.total = UniswapService.data.deposited.total + txValue;
+            UniswapService.data.deposited.hasDeposit = deposited;
         }
     }
 }
