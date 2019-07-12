@@ -187,13 +187,16 @@ const UniswapService = {
         const investmentToday = ((yourEth * ethPriceFixed) + (data.deposited.eth * ethPriceFixed)).toFixed(2);
         const valueHold = (investmentToday - (data.currentProfit * ethPriceFixed)).toFixed(2);
         const totalDeposited = data.deposited.total.toFixed(2);
-        const netRoi = ((investmentToday - totalDeposited) / totalDeposited) * 100
+        const netRoi = (((investmentToday - totalDeposited) / totalDeposited) * 100).toFixed(2);
+        const priceRoi = (((valueHold - totalDeposited) / totalDeposited) * 100).toFixed(2);
         return {
             yourEth,
             yourToken: ((data.liquidity.tokens * data.deposited.poolShare) / 100).toFixed(2),
             investmentToday,
             valueHold,
-            netRoi: netRoi.toFixed(2),
+            netRoi,
+            priceRoi,
+            uniswapRoi: (netRoi - priceRoi).toFixed(2),
             totalDeposited,
         }
     },

@@ -115,8 +115,8 @@ const App = () => {
                           <td>${roiData.investmentToday}</td>
                           <td>${roiData.totalDeposited}</td>
                           <td>{roiData.netRoi}%</td>
-                          <td>-</td>
-                          <td>-</td>
+                          <td>{roiData.priceRoi}%</td>
+                          <td>{roiData.uniswapRoi}%</td>
                         </tr>
                       </tbody>
                     </Table>
