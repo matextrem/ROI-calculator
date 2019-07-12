@@ -63,7 +63,6 @@ const REACT_APP = /^REACT_APP_/i;
 function getClientEnvironment(publicUrl) {
 
   // update type of raw variable from const to let
-
   let raw = Object.keys(process.env)
     .filter(key => REACT_APP.test(key))
     .reduce(
@@ -81,8 +80,7 @@ function getClientEnvironment(publicUrl) {
 
   const dotenv = require('dotenv');
 
-  const env = dotenv.config().parsed;
-
+  const env = dotenv.config();
   const newKeys = Object.keys(env).reduce((prev, next) => {
     prev[next] = env[next];
     return prev;
