@@ -171,14 +171,15 @@ const UniswapService = {
     },
     getDisplayData: async data => {
         const ethPrice = await UniswapService.tokenPrice('ethereum');
-        const yourEth = (data.liquidity.eth * data.deposited.poolShare) / 100;
-        const investmentToday = (yourEth * ethPrice) + (data.deposited.eth * ethPrice);
-        const valueHold = investmentToday - (data.currentProfit * ethPrice);
+        const ethPriceFixed = Number(ethPrice).toFixed(2);
+        const yourEth = ((data.liquidity.eth * data.deposited.poolShare) / 100).toFixed(2);
+        const investmentToday = ((yourEth * ethPriceFixed) + (data.deposited.eth * ethPriceFixed)).toFixed(2);
+        const valueHold = (investmentToday - (data.currentProfit * ethPriceFixed)).toFixed(2);
         return {
-            yourEth: yourEth.toFixed(2),
+            yourEth,
             yourToken: ((data.liquidity.tokens * data.deposited.poolShare) / 100).toFixed(2),
-            investmentToday: investmentToday.toFixed(2),
-            valueHold: valueHold.toFixed(2),
+            investmentToday,
+            valueHold
         }
     },
     updateDeposit: (result, address, eth, tokens, deposited) => {
