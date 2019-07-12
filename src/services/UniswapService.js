@@ -183,7 +183,6 @@ const UniswapService = {
     getDisplayData: async data => {
         const ethPrice = await UniswapService.tokenPrice('ethereum');
         const ethPriceFixed = Number(ethPrice).toFixed(2);
-        console.log(data.deposited.eth);
         const yourEth = ((data.liquidity.eth * data.deposited.poolShare) / 100).toFixed(2);
         const investmentToday = ((yourEth * ethPriceFixed) + (data.deposited.eth * ethPriceFixed)).toFixed(2);
         const valueHold = (investmentToday - (data.currentProfit * ethPriceFixed)).toFixed(2);
