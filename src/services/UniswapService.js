@@ -175,7 +175,7 @@ const UniswapService = {
             params: {
                 includePrice: true
             },
-            headers: { 'X-Api-Key': 'UAKe2867a72bfb9fadd3e1407ee81fdb4a0' }
+            headers: { 'X-Api-Key': process.env.TX_PRICE_API_KEY }
         });
 
         return Number(response.data.payload.price.value.total);
