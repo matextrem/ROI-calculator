@@ -10,10 +10,11 @@ const Pools = () => {
 
 
   async function getPools() {
-    setLoading(true);
+    setLoading(false); //TODO: Set to true when api endpoint works.
     const response = await poolService.get();
     setPools(response.data);
     setLoading(false);
+
   }
   useEffect(() => {
     getPools()
@@ -27,21 +28,21 @@ const Pools = () => {
           </Spinner>
         </div>
       ) : (
-        <>
-          <h3>Liquidity pools list</h3>
-          <Table striped bordered hover>
-            <thead>
-              <tr>
-                <th>Liquidity Pool</th>
-                <th>Current Liquidity ETH</th>
-                <th>Expected Fees</th>
-                <th>Expected impermanent loss</th>
-                <th>Expected net ROI</th>
-                <th>Equivalent APR</th>
-              </tr>
-            </thead>
-            <tbody>
-              {pools.map(pool => {
+          <>
+            <h3>Liquidity pools list</h3>
+            <Table striped bordered hover>
+              <thead>
+                <tr>
+                  <th>Liquidity Pool</th>
+                  <th>Current Liquidity ETH</th>
+                  <th>Expected Fees</th>
+                  <th>Expected impermanent loss</th>
+                  <th>Expected net ROI</th>
+                  <th>Equivalent APR</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pools.map(pool => {
                   return (
                     <tr key={`pool-${pool.token_symbol}`}>
                       <td>
@@ -70,9 +71,9 @@ const Pools = () => {
                     </tr>
                   )
                 })}
-            </tbody>
-          </Table>
-        </>
+              </tbody>
+            </Table>
+          </>
         )}
     </Row>
   );
