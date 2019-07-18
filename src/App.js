@@ -1,10 +1,11 @@
+/* eslint-disable react/jsx-filename-extension */
 import React, { useState } from 'react';
 import { useDebounce } from 'use-debounce';
-import uniswapService from './services/UniswapService';
 import { Navbar, Spinner, Row, Container, InputGroup, FormControl, Button, Col, Dropdown, Card, Table } from 'react-bootstrap';
+import uniswapService from './services/UniswapService';
+import Pools from './components/Pools';
 import logo from './logo.svg';
 import './App.scss';
-import UniswapService from './services/UniswapService';
 
 const App = () => {
 
@@ -25,7 +26,7 @@ const App = () => {
     }
     fetchData();
   };
-  ;
+
   return (
     <div className="App">
       <Navbar bg="dark" variant="dark">
@@ -63,68 +64,92 @@ const App = () => {
                   {token || 'Tokens'}
                 </Dropdown.Toggle>
                 <Dropdown.Menu className="token-selector">
-                  {UniswapService.tokens().map((token, key) => <Dropdown.Item onClick={() => setToken(token)} key={`token-${key}`}>{token}</Dropdown.Item>)}
+                  {uniswapService.tokens().map((token, key) => <Dropdown.Item onClick={() => setToken(token)} key={`token-${key}`}>{token}</Dropdown.Item>)}
                 </Dropdown.Menu>
               </Dropdown>
             </Col>
-            {loading ?
+            {loading ? (
               <div className="spinner">
                 <h5>Analyzing all the transactions... (this might take a few minutes)</h5>
                 <Spinner animation="grow" role="status" size="lg">
                   <span className="sr-only">Loading...</span>
                 </Spinner>
-              </div> :
-              <>
-                <Row lg={12} md={12} sm={12} xs={12}>
-                  <div className="roi-box">
-                    <Card>
-                      <Card.Header as="h5">Value of your Investment Today: </Card.Header>
-                      <Card.Body>
-                        <Card.Title>{roiData.investmentToday || "-"} {roiData.investmentToday && "USD"}</Card.Title>
-                      </Card.Body>
-                    </Card>
-                  </div>
-                  <div className="roi-box">
-                    <Card>
-                      <Card.Header as="h5">Value if you HODL'd: </Card.Header>
-                      <Card.Body>
-                        <Card.Title>{roiData.valueHold || "-"} {roiData.valueHold && "USD"}</Card.Title>
-                      </Card.Body>
-                    </Card>
-                  </div>
-                </Row>
-                {!loading && Object.keys(roiData).length !== 0 &&
+              </div>
+            ) : (
+                <>
                   <Row lg={12} md={12} sm={12} xs={12}>
-                    <Table striped bordered hover>
-                      <thead>
-                        <tr>
+                    <div className="roi-box">
+                      <Card>
+                        <Card.Header as="h5">Value of your Investment Today: </Card.Header>
+                        <Card.Body>
+                          <Card.Title>
+                            {roiData.investmentToday || "-"}
+                            {' '}
+                            {roiData.investmentToday && "USD"}
+                          </Card.Title>
+                        </Card.Body>
+                      </Card>
+                    </div>
+                    <div className="roi-box">
+                      <Card>
+                        <Card.Header as="h5">Value if you HODL&apos;d: </Card.Header>
+                        <Card.Body>
+                          <Card.Title>
+                            {roiData.valueHold || "-"}
+                            {' '}
+                            {roiData.valueHold && "USD"}
+                          </Card.Title>
+                        </Card.Body>
+                      </Card>
+                    </div>
+                  </Row>
+                  {!loading && Object.keys(roiData).length !== 0 &&
+                    <Row lg={12} md={12} sm={12} xs={12}>
+                      <Table striped bordered hover>
+                        <thead>
+                          <tr>
 
-                          <th>Your ETH</th>
-                          <th>Your {token}</th>
-                          <th>Value today</th>
-                          <th>Value when invested</th>
-                          <th>Net ROI</th>
-                          <th>Price ROI</th>
-                          <th>Uniswap ROI</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr>
-                          <td>{roiData.yourEth}</td>
-                          <td>{roiData.yourToken}</td>
-                          <td>${roiData.investmentToday}</td>
-                          <td>${roiData.totalDeposited}</td>
-                          <td>{roiData.netRoi}%</td>
-                          <td>{roiData.priceRoi}%</td>
-                          <td>{roiData.uniswapRoi}%</td>
-                        </tr>
-                      </tbody>
-                    </Table>
-                  </Row>}
-              </>}
+                            <th>Your ETH</th>
+                            <th>
+                              Your {token}
+                            </th>
+                            <th>Value today</th>
+                            <th>Value when invested</th>
+                            <th>Net ROI</th>
+                            <th>Price ROI</th>
+                            <th>Uniswap ROI</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr>
+                            <td>{roiData.yourEth}</td>
+                            <td>{roiData.yourToken}</td>
+                            <td>
+                              ${roiData.investmentToday}
+                            </td>
+                            <td>
+                              ${roiData.totalDeposited}
+                            </td>
+                            <td>
+                              {roiData.netRoi} %
+                            </td>
+                            <td>
+                              {roiData.priceRoi}%
+                            </td>
+                            <td>
+                              {roiData.uniswapRoi}%
+                            </td>
+                          </tr>
+                        </tbody>
+                      </Table>
+                    </Row>}
+                  <Col lg={12} md={12} sm={12} xs={12}>
+                    <Pools />
+                  </Col>
+                </>
+              )}
           </Row>
         </div>
-
       </Container>
     </div>
   );
